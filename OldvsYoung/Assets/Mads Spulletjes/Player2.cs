@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class FighterMovementPlayer1 : MonoBehaviour
+public class FighterMovementPlayer2 : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
@@ -16,10 +16,8 @@ public class FighterMovementPlayer1 : MonoBehaviour
     public float groundCheckRadius = 0.2f;
 
     [Header("Attack Settings")]
-    public LayerMask enemyLayers;
-
-    [Header("Player Model")]
     public GameObject mainModel;
+    public float hitFreezeDuration = 0.05f;
 
     [System.Serializable]
     public class DirectionalAttack
@@ -32,7 +30,6 @@ public class FighterMovementPlayer1 : MonoBehaviour
     public class Attack
     {
         public string name = "New Attack";
-        public Key key;
         public float damage = 10f;
         public float attackSpeed = 0.4f;
         public float attackDuration = 0.2f;
@@ -43,33 +40,16 @@ public class FighterMovementPlayer1 : MonoBehaviour
         public DirectionalAttack upAttack;
     }
 
-    public enum Key { C, V }
-
-    public Attack attack1 = new Attack
-    {
-        name = "Light Attack",
-        key = Key.C,
-        damage = 10f,
-        attackSpeed = 0.4f,
-        attackDuration = 0.2f,
-        knockbackForce = 5f
-    };
-
-    public Attack attack2 = new Attack
-    {
-        name = "Heavy Attack",
-        key = Key.V,
-        damage = 25f,
-        attackSpeed = 0.8f,
-        attackDuration = 0.3f,
-        knockbackForce = 12f
-    };
+    public Attack attack1 = new Attack { name = "Light Attack", damage = 10f, attackSpeed = 0.4f, attackDuration = 0.2f, knockbackForce = 5f };
+    public Attack attack2 = new Attack { name = "Heavy Attack", damage = 25f, attackSpeed = 0.8f, attackDuration = 0.3f, knockbackForce = 12f };
 
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool isAttacking = false;
     private HashSet<Collider2D> alreadyHit = new HashSet<Collider2D>();
     private Collider2D[] playerColliders;
+
+    private Attack currentAttack;
 
     void Start()
     {
@@ -94,8 +74,8 @@ public class FighterMovementPlayer1 : MonoBehaviour
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        bool left = Keyboard.current.aKey.isPressed;
-        bool right = Keyboard.current.dKey.isPressed;
+        bool left = Keyboard.current.leftArrowKey.isPressed;
+        bool right = Keyboard.current.rightArrowKey.isPressed;
 
         float moveInput = 0f;
         if (left && !right) moveInput = -1f;
@@ -104,25 +84,25 @@ public class FighterMovementPlayer1 : MonoBehaviour
         float targetSpeed = moveInput * moveSpeed;
         rb.linearVelocity = new Vector2(Mathf.Lerp(rb.linearVelocity.x, targetSpeed, Time.deltaTime * 15f), rb.linearVelocity.y);
 
-        if (Keyboard.current.wKey.wasPressedThisFrame && isGrounded)
+        if (Keyboard.current.upArrowKey.wasPressedThisFrame && isGrounded)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
 
-        if (Keyboard.current.sKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
+        if (Keyboard.current.downArrowKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
             rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fastFallMultiplier - 1) * Time.deltaTime;
     }
 
     void HandleExtraJumpForce()
     {
-        if (Keyboard.current.wKey.isPressed && !isGrounded && rb.linearVelocity.y > 0)
+        if (Keyboard.current.upArrowKey.isPressed && !isGrounded && rb.linearVelocity.y > 0)
             rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
     }
 
     void HandleAttacks()
     {
-        if (Keyboard.current.cKey.wasPressedThisFrame && !isAttacking)
+        if (Mouse.current.leftButton.wasPressedThisFrame && !isAttacking)
             StartCoroutine(PerformDirectionalAttack(attack1));
 
-        if (Keyboard.current.vKey.wasPressedThisFrame && !isAttacking)
+        if (Mouse.current.rightButton.wasPressedThisFrame && !isAttacking)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
 
@@ -130,15 +110,16 @@ public class FighterMovementPlayer1 : MonoBehaviour
     {
         isAttacking = true;
         alreadyHit.Clear();
+        currentAttack = attack;
 
         HideAllAttackObjects();
         if (mainModel != null)
             mainModel.SetActive(false);
 
         DirectionalAttack chosenAttack = attack.rightAttack;
-        bool left = Keyboard.current.aKey.isPressed;
-        bool right = Keyboard.current.dKey.isPressed;
-        bool up = Keyboard.current.wKey.isPressed;
+        bool left = Keyboard.current.leftArrowKey.isPressed;
+        bool right = Keyboard.current.rightArrowKey.isPressed;
+        bool up = Keyboard.current.upArrowKey.isPressed;
 
         if (left) chosenAttack = attack.leftAttack;
         else if (right) chosenAttack = attack.rightAttack;
@@ -161,6 +142,7 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
         yield return new WaitForSeconds(attack.attackSpeed);
         isAttacking = false;
+        currentAttack = null;
     }
 
     private void HideAllAttackObjects()
@@ -171,12 +153,9 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     private void HideAttackGroup(Attack attack)
     {
-        if (attack.leftAttack.attackObject != null)
-            attack.leftAttack.attackObject.SetActive(false);
-        if (attack.rightAttack.attackObject != null)
-            attack.rightAttack.attackObject.SetActive(false);
-        if (attack.upAttack.attackObject != null)
-            attack.upAttack.attackObject.SetActive(false);
+        if (attack.leftAttack.attackObject != null) attack.leftAttack.attackObject.SetActive(false);
+        if (attack.rightAttack.attackObject != null) attack.rightAttack.attackObject.SetActive(false);
+        if (attack.upAttack.attackObject != null) attack.upAttack.attackObject.SetActive(false);
 
         foreach (var box in attack.leftAttack.hitboxes) if (box != null) box.enabled = false;
         foreach (var box in attack.rightAttack.hitboxes) if (box != null) box.enabled = false;
@@ -200,7 +179,6 @@ public class FighterMovementPlayer1 : MonoBehaviour
         foreach (var colA in allHitboxes)
         {
             if (colA == null) continue;
-
             foreach (var playerCol in playerColliders)
                 if (playerCol != null && colA != playerCol)
                     Physics2D.IgnoreCollision(colA, playerCol, true);
@@ -213,37 +191,31 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!isAttacking || alreadyHit.Contains(collision)) return;
+        if (!isAttacking || alreadyHit.Contains(collision) || currentAttack == null) return;
 
-        if (collision.CompareTag("Player2") && gameObject.CompareTag("Player1"))
+        if (collision.CompareTag("Player1") && gameObject.CompareTag("Player2"))
         {
             alreadyHit.Add(collision);
 
             Health targetHealth = collision.GetComponent<Health>();
-            if (targetHealth != null)
-                targetHealth.TakeDamage(GetCurrentAttackDamage());
+            if (targetHealth != null) targetHealth.TakeDamage(currentAttack.damage);
 
             Rigidbody2D enemyRb = collision.attachedRigidbody;
             if (enemyRb != null)
             {
                 // Knockback altijd omhoog
-                enemyRb.AddForce(Vector2.up * GetCurrentAttackKnockback(), ForceMode2D.Impulse);
+                enemyRb.AddForce(Vector2.up * currentAttack.knockbackForce, ForceMode2D.Impulse);
             }
+
+            StartCoroutine(HitFreeze(hitFreezeDuration));
         }
     }
 
-    private float GetCurrentAttackDamage()
+    private IEnumerator HitFreeze(float duration)
     {
-        if (Keyboard.current.cKey.isPressed) return attack1.damage;
-        if (Keyboard.current.vKey.isPressed) return attack2.damage;
-        return 0f;
-    }
-
-    private float GetCurrentAttackKnockback()
-    {
-        if (Keyboard.current.cKey.isPressed) return attack1.knockbackForce;
-        if (Keyboard.current.vKey.isPressed) return attack2.knockbackForce;
-        return 0f;
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = 1f;
     }
 
     void OnDrawGizmosSelected()
