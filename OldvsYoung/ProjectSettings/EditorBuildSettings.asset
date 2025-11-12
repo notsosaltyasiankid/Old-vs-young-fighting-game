@@ -6,11 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/StartingMenu.unity
-    guid: 739eba321dbf9a542b32df1de4811db2
-  - enabled: 1
     path: Assets/Scenes/Health.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/winscreenjongetje.unity
+    guid: ea8c28945282ae04aa26a4d775bac57a
+  - enabled: 1
+    path: Assets/Scenes/winscreenman.unity
+    guid: 55dc0d63968c5c74cace229c8bb2337a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
