@@ -9,19 +9,18 @@ public class points : MonoBehaviour
     public static points instance;
 
 
-    public Text scoreText;
+    public Text jongetje;
+    public Text oldman;
 
-    int score = 0;
+    int scorejongetje = 0;
+    int scoreoldman = 0;
 
-    private void Awake()
-    {
-        instance = this;
-    }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        scoreText.text = score.ToString() + "POINTS";
+        jongetje.text = scorejongetje.ToString();
+        oldman.text = scoreoldman.ToString();
     }
 
 
@@ -29,17 +28,33 @@ public class points : MonoBehaviour
     {
         if (Keyboard.current.oKey.wasPressedThisFrame)
         {
-            AddPoints();
+            AddPointsjongetje();
         }
 
-        if (score == 2)
+        if (Keyboard.current.pKey.wasPressedThisFrame)
+        {
+            AddPointsoldman();
+        }
+
+        if (scorejongetje == 3)
         {
             SceneManager.LoadScene(1);
         }
+
+        if (scoreoldman == 3)
+        {
+            SceneManager.LoadScene(2);
+        }
     }
-    public void AddPoints()
+    public void AddPointsjongetje()
     {
-        score += 1;
-        scoreText.text = score.ToString() + "POINTS";
+        scorejongetje += 1;
+        jongetje.text = scorejongetje.ToString();
+    }
+
+    public void AddPointsoldman()
+    {
+        scoreoldman += 1;
+        oldman.text = scoreoldman.ToString();
     }
 }
