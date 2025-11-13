@@ -24,32 +24,31 @@ public class FighterMovementPlayer2 : MonoBehaviour
     {
         public GameObject attackObject;
         public List<BoxCollider2D> hitboxes;
+        public Vector2 knockbackDirection = Vector2.right;
+        public float knockbackForce = 5f;
+        public float damage = 10f;
+        public float attackSpeed = 0.4f;
+        public float attackDuration = 0.2f;
     }
 
     [System.Serializable]
     public class Attack
     {
         public string name = "New Attack";
-        public float damage = 10f;
-        public float attackSpeed = 0.4f;
-        public float attackDuration = 0.2f;
-        public float knockbackForce = 5f;
-
         public DirectionalAttack rightAttack;
         public DirectionalAttack leftAttack;
         public DirectionalAttack upAttack;
     }
 
-    public Attack attack1 = new Attack { name = "Light Attack", damage = 10f, attackSpeed = 0.4f, attackDuration = 0.2f, knockbackForce = 5f };
-    public Attack attack2 = new Attack { name = "Heavy Attack", damage = 25f, attackSpeed = 0.8f, attackDuration = 0.3f, knockbackForce = 12f };
+    public Attack attack1;
+    public Attack attack2;
 
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool isAttacking = false;
     private HashSet<Collider2D> alreadyHit = new HashSet<Collider2D>();
     private Collider2D[] playerColliders;
-
-    private Attack currentAttack;
+    private DirectionalAttack currentAttack;
 
     void Start()
     {
@@ -110,8 +109,6 @@ public class FighterMovementPlayer2 : MonoBehaviour
     {
         isAttacking = true;
         alreadyHit.Clear();
-        currentAttack = attack;
-
         HideAllAttackObjects();
         if (mainModel != null)
             mainModel.SetActive(false);
@@ -125,13 +122,15 @@ public class FighterMovementPlayer2 : MonoBehaviour
         else if (right) chosenAttack = attack.rightAttack;
         else if (up) chosenAttack = attack.upAttack;
 
+        currentAttack = chosenAttack;
+
         if (chosenAttack.attackObject != null)
             chosenAttack.attackObject.SetActive(true);
 
         foreach (BoxCollider2D box in chosenAttack.hitboxes)
             if (box != null) box.enabled = true;
 
-        yield return new WaitForSeconds(attack.attackDuration);
+        yield return new WaitForSeconds(chosenAttack.attackDuration);
 
         foreach (BoxCollider2D box in chosenAttack.hitboxes)
             if (box != null) box.enabled = false;
@@ -140,7 +139,7 @@ public class FighterMovementPlayer2 : MonoBehaviour
         if (mainModel != null)
             mainModel.SetActive(true);
 
-        yield return new WaitForSeconds(attack.attackSpeed);
+        yield return new WaitForSeconds(chosenAttack.attackSpeed);
         isAttacking = false;
         currentAttack = null;
     }
@@ -197,14 +196,16 @@ public class FighterMovementPlayer2 : MonoBehaviour
         {
             alreadyHit.Add(collision);
 
+            // Damage
             Health targetHealth = collision.GetComponent<Health>();
             if (targetHealth != null) targetHealth.TakeDamage(currentAttack.damage);
 
+            // Knockback
             Rigidbody2D enemyRb = collision.attachedRigidbody;
             if (enemyRb != null)
             {
-                // Knockback altijd omhoog
-                enemyRb.AddForce(Vector2.up * currentAttack.knockbackForce, ForceMode2D.Impulse);
+                Vector2 knockDir = currentAttack.knockbackDirection.normalized;
+                enemyRb.AddForce(knockDir * currentAttack.knockbackForce, ForceMode2D.Impulse);
             }
 
             StartCoroutine(HitFreeze(hitFreezeDuration));

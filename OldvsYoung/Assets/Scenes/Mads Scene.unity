@@ -1044,7 +1044,7 @@ MonoBehaviour:
   groundCheck: {fileID: 459671552}
   groundCheckRadius: 0.2
   mainModel: {fileID: 1071653921}
-  hitFreezeDuration: 0.05
+  hitFreezeDuration: 0.1
   attack1:
     name: Light Attack
     damage: 15
@@ -1836,6 +1836,7 @@ MonoBehaviour:
   enemyLayers:
     serializedVersion: 2
     m_Bits: 0
+  hitFreezeDuration: 0
   mainModel: {fileID: 1400916080}
   attack1:
     name: Light Attack
