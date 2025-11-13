@@ -12,18 +12,27 @@ public class points : MonoBehaviour
     public Text oldman;
 
     [Header("Reveal Objects (in order of score)")]
-    public GameObject[] revealJongetje; 
-    public GameObject[] revealOldman;   
+    public GameObject[] revealJongetje;
+    public GameObject[] revealOldman;
 
     int scorejongetje = 0;
     int scoreoldman = 0;
+
+    private void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+    }
 
     void Start()
     {
         jongetje.text = scorejongetje.ToString();
         oldman.text = scoreoldman.ToString();
 
-        
         foreach (GameObject obj in revealJongetje)
             if (obj != null) obj.SetActive(false);
 
@@ -33,25 +42,16 @@ public class points : MonoBehaviour
 
     private void Update()
     {
+        // Debug keys (you can remove later)
         if (Keyboard.current.oKey.wasPressedThisFrame)
-        {
             AddPointsjongetje();
-        }
-
         if (Keyboard.current.pKey.wasPressedThisFrame)
-        {
             AddPointsoldman();
-        }
 
         if (scorejongetje == 3)
-        {
             SceneManager.LoadScene(1);
-        }
-
         if (scoreoldman == 3)
-        {
             SceneManager.LoadScene(2);
-        }
     }
 
     public void AddPointsjongetje()

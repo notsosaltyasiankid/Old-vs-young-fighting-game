@@ -8,27 +8,30 @@ public class Health : MonoBehaviour
     public float CurrentHealth { get; private set; }
 
     public event Action<float, float> OnHealthChanged;
+    public event Action<Health> OnDied;
+
+    private bool isDead = false;
 
     private void Awake()
     {
-        CurrentHealth = Mathf.Clamp(CurrentHealth <= 0 ? maxHealth : CurrentHealth, 0, maxHealth);
+        CurrentHealth = Mathf.Clamp(maxHealth, 0f, maxHealth);
+        isDead = false;
     }
 
     private void Start()
     {
-        // Notify UI of the initial value
         OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
     }
 
     public void TakeDamage(float amount)
     {
-        if (amount <= 0f) return;
+        if (amount <= 0f || isDead) return;
         SetHealth(CurrentHealth - amount);
     }
 
     public void Heal(float amount)
     {
-        if (amount <= 0f) return;
+        if (amount <= 0f || isDead) return;
         SetHealth(CurrentHealth + amount);
     }
 
@@ -39,22 +42,18 @@ public class Health : MonoBehaviour
 
         CurrentHealth = clamped;
         OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
+
+        if (CurrentHealth <= 0f && !isDead)
+        {
+            isDead = true;
+            OnDied?.Invoke(this);
+        }
     }
 
-    public void SetMaxHealth(float newMax, bool keepPercent = true)
+    public void ResetHealth()
     {
-        newMax = Mathf.Max(1f, newMax);
-        if (keepPercent)
-        {
-            float pct = maxHealth > 0 ? CurrentHealth / maxHealth : 1f;
-            maxHealth = newMax;
-            CurrentHealth = Mathf.Clamp(newMax * pct, 0f, maxHealth);
-        }
-        else
-        {
-            maxHealth = newMax;
-            CurrentHealth = Mathf.Clamp(CurrentHealth, 0f, maxHealth);
-        }
+        isDead = false;
+        CurrentHealth = maxHealth;
         OnHealthChanged?.Invoke(CurrentHealth, maxHealth);
     }
 
@@ -62,8 +61,10 @@ public class Health : MonoBehaviour
     private void OnValidate()
     {
         if (maxHealth < 1f) maxHealth = 1f;
-        if (Application.isPlaying) return;
-        CurrentHealth = Mathf.Clamp(maxHealth, 0f, maxHealth);
+        if (!Application.isPlaying)
+        {
+            CurrentHealth = Mathf.Clamp(maxHealth, 0f, maxHealth);
+        }
     }
 #endif
 }
