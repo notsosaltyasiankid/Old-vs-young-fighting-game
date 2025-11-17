@@ -1052,7 +1052,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 157069860}
       knockbackDirection: {x: 20, y: 5}
-      knockbackForce: 45
+      knockbackForce: 55
       damage: 15
       attackSpeed: 0.3
       attackDuration: 0.3
@@ -1061,7 +1061,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1754219757}
       knockbackDirection: {x: -20, y: 5}
-      knockbackForce: 45
+      knockbackForce: 55
       damage: 15
       attackSpeed: 0.3
       attackDuration: 0.3
@@ -1070,7 +1070,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1624245130}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 35
+      knockbackForce: 50
       damage: 15
       attackSpeed: 0.3
       attackDuration: 0.3
@@ -1081,7 +1081,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 31412802}
       knockbackDirection: {x: 35, y: 5}
-      knockbackForce: 45
+      knockbackForce: 65
       damage: 20
       attackSpeed: 0.35
       attackDuration: 0.35
@@ -1090,7 +1090,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1667305679}
       knockbackDirection: {x: -35, y: 5}
-      knockbackForce: 45
+      knockbackForce: 65
       damage: 20
       attackSpeed: 0.35
       attackDuration: 0.35
@@ -1099,7 +1099,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1256530155}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 40
+      knockbackForce: 50
       damage: 20
       attackSpeed: 0.35
       attackDuration: 0.35
