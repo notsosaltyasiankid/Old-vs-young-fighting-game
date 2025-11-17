@@ -1034,53 +1034,75 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5f62113477ec6648bad4e56ce4d385c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FighterMovementSmoothP2
-  moveSpeed: 8
-  jumpForce: 15
-  fastFallMultiplier: 2
-  extraJumpForce: 3
+  moveSpeed: 10
+  jumpForce: 17
+  fastFallMultiplier: 10
+  extraJumpForce: 20
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
   groundCheck: {fileID: 459671552}
   groundCheckRadius: 0.2
   mainModel: {fileID: 1071653921}
-  hitFreezeDuration: 0.1
+  hitFreezeDuration: 0
   attack1:
     name: Light Attack
-    damage: 15
-    attackSpeed: 0.2
-    attackDuration: 0.2
-    knockbackForce: 20
     rightAttack:
       attackObject: {fileID: 654571216}
       hitboxes:
       - {fileID: 157069860}
+      knockbackDirection: {x: 20, y: 5}
+      knockbackForce: 45
+      damage: 15
+      attackSpeed: 0.3
+      attackDuration: 0.3
     leftAttack:
       attackObject: {fileID: 84261279}
       hitboxes:
       - {fileID: 1754219757}
+      knockbackDirection: {x: -20, y: 5}
+      knockbackForce: 45
+      damage: 15
+      attackSpeed: 0.3
+      attackDuration: 0.3
     upAttack:
       attackObject: {fileID: 1784495602}
       hitboxes:
       - {fileID: 1624245130}
+      knockbackDirection: {x: 0, y: 10}
+      knockbackForce: 35
+      damage: 15
+      attackSpeed: 0.3
+      attackDuration: 0.3
   attack2:
     name: Heavy Attack
-    damage: 30
-    attackSpeed: 0.3
-    attackDuration: 0.3
-    knockbackForce: 25
     rightAttack:
       attackObject: {fileID: 781639084}
       hitboxes:
       - {fileID: 31412802}
+      knockbackDirection: {x: 35, y: 5}
+      knockbackForce: 45
+      damage: 20
+      attackSpeed: 0.35
+      attackDuration: 0.35
     leftAttack:
       attackObject: {fileID: 615697600}
       hitboxes:
       - {fileID: 1667305679}
+      knockbackDirection: {x: -35, y: 5}
+      knockbackForce: 45
+      damage: 20
+      attackSpeed: 0.35
+      attackDuration: 0.35
     upAttack:
       attackObject: {fileID: 255884072}
       hitboxes:
       - {fileID: 1256530155}
+      knockbackDirection: {x: 0, y: 10}
+      knockbackForce: 40
+      damage: 20
+      attackSpeed: 0.35
+      attackDuration: 0.35
 --- !u!50 &657318570
 Rigidbody2D:
   serializedVersion: 5
@@ -1149,7 +1171,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8185d3e9f9f259241a437867ea44117b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 100
+  maxHealth: 250
   currentHealth: 0
 --- !u!61 &657318574
 BoxCollider2D:
@@ -1185,7 +1207,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 3.5230618, y: 0.74025416}
+  m_Offset: {x: 3.515119, y: 0.83953714}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -1195,7 +1217,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.3564186, y: 2.9191775}
+  m_Size: {x: 1.4040747, y: 2.784153}
   m_EdgeRadius: 0
 --- !u!1 &781639084
 GameObject:
@@ -1824,10 +1846,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6783fc1288671b4994688f106e76574, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Simple2DMovement
-  moveSpeed: 10
+  moveSpeed: 13
   jumpForce: 20
-  fastFallMultiplier: 2
-  extraJumpForce: 3
+  fastFallMultiplier: 10
+  extraJumpForce: 20
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
@@ -1836,46 +1858,66 @@ MonoBehaviour:
   enemyLayers:
     serializedVersion: 2
     m_Bits: 0
-  hitFreezeDuration: 0
   mainModel: {fileID: 1400916080}
+  hitFreezeDuration: 0
   attack1:
     name: Light Attack
-    key: 0
-    damage: 10
-    attackSpeed: 0.15
-    attackDuration: 0.15
-    knockbackForce: 15
     rightAttack:
       attackObject: {fileID: 1527751863}
       hitboxes:
       - {fileID: 866193589}
+      knockbackDirection: {x: 20, y: 5}
+      knockbackForce: 40
+      damage: 10
+      attackSpeed: 0.15
+      attackDuration: 0.15
     leftAttack:
       attackObject: {fileID: 2046459114}
       hitboxes:
       - {fileID: 1902354263}
+      knockbackDirection: {x: -20, y: 5}
+      knockbackForce: 40
+      damage: 10
+      attackSpeed: 0.15
+      attackDuration: 0.15
     upAttack:
       attackObject: {fileID: 1997584855}
       hitboxes:
       - {fileID: 1935869027}
+      knockbackDirection: {x: 0, y: 10}
+      knockbackForce: 30
+      damage: 10
+      attackSpeed: 0.15
+      attackDuration: 0.15
   attack2:
     name: Heavy Attack
-    key: 1
-    damage: 20
-    attackSpeed: 0.25
-    attackDuration: 0.25
-    knockbackForce: 25
     rightAttack:
       attackObject: {fileID: 1729525062}
       hitboxes:
       - {fileID: 1725887893}
+      knockbackDirection: {x: 25, y: 5}
+      knockbackForce: 45
+      damage: 15
+      attackSpeed: 0.25
+      attackDuration: 0.25
     leftAttack:
       attackObject: {fileID: 1854548677}
       hitboxes:
       - {fileID: 315697061}
+      knockbackDirection: {x: -25, y: 5}
+      knockbackForce: 45
+      damage: 15
+      attackSpeed: 0.25
+      attackDuration: 0.25
     upAttack:
       attackObject: {fileID: 1388809137}
       hitboxes:
       - {fileID: 808790007}
+      knockbackDirection: {x: 0, y: 10}
+      knockbackForce: 35
+      damage: 15
+      attackSpeed: 0.25
+      attackDuration: 0.25
 --- !u!50 &1448126969
 Rigidbody2D:
   serializedVersion: 5
@@ -2003,7 +2045,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8185d3e9f9f259241a437867ea44117b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 100
+  maxHealth: 250
   currentHealth: 0
 --- !u!61 &1448126974
 BoxCollider2D:
@@ -2039,7 +2081,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -5.9357424, y: -0.7813796}
+  m_Offset: {x: -6.034196, y: -0.74037695}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -2049,7 +2091,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1.3983593, y: 2.4950306}
+  m_Size: {x: 1.4323077, y: 2.4130254}
   m_EdgeRadius: 0
 --- !u!1 &1527751863
 GameObject:
