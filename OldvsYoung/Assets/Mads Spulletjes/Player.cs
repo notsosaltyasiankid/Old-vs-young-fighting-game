@@ -18,7 +18,10 @@ public class FighterMovementPlayer1 : MonoBehaviour
     [Header("Attack Settings")]
     public LayerMask enemyLayers;
     public GameObject mainModel;
-    public float hitFreezeDuration = 0.05f;
+
+    [Header("Stun Settings")]
+    public float stunDuration = 1f;
+    private bool isStunned = false;
 
     [System.Serializable]
     public class DirectionalAttack
@@ -55,16 +58,16 @@ public class FighterMovementPlayer1 : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         playerColliders = GetComponentsInChildren<Collider2D>(true);
-
         HideAllAttackObjects();
         if (mainModel != null)
             mainModel.SetActive(true);
-
         IgnoreInternalCollisions();
     }
 
     void Update()
     {
+        if (isStunned) return; // ❌ BLOCK ALL INPUT
+
         HandleMovement();
         HandleAttacks();
         HandleExtraJumpForce();
@@ -99,10 +102,13 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     void HandleAttacks()
     {
-        if (Keyboard.current.cKey.wasPressedThisFrame && !isAttacking)
+        if (isStunned) return; // ❌ cannot attack while stunned
+        if (isAttacking) return;
+
+        if (Keyboard.current.cKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack1));
 
-        if (Keyboard.current.vKey.wasPressedThisFrame && !isAttacking)
+        if (Keyboard.current.vKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
 
@@ -209,23 +215,26 @@ public class FighterMovementPlayer1 : MonoBehaviour
                 enemyRb.AddForce(knockDir * currentAttack.knockbackForce, ForceMode2D.Impulse);
             }
 
-            StartCoroutine(HitFreeze(hitFreezeDuration));
+            // APPLY STUN TO PLAYER 2
+            FighterMovementPlayer2 p2 = collision.GetComponent<FighterMovementPlayer2>();
+            if (p2 != null)
+                p2.ApplyStun(stunDuration);
         }
     }
 
-    private IEnumerator HitFreeze(float duration)
+    // STUN FUNCTION
+    public void ApplyStun(float duration)
     {
-        Time.timeScale = 0f;
-        yield return new WaitForSecondsRealtime(duration);
-        Time.timeScale = 1f;
+        if (gameObject.activeInHierarchy)
+            StartCoroutine(StunRoutine(duration));
     }
 
-    void OnDrawGizmosSelected()
+    private IEnumerator StunRoutine(float duration)
     {
-        if (groundCheck != null)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
-        }
+        isStunned = true;
+        isAttacking = false;
+        HideAllAttackObjects();
+        yield return new WaitForSeconds(duration);
+        isStunned = false;
     }
 }

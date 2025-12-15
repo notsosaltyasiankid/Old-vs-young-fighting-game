@@ -17,7 +17,10 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     [Header("Attack Settings")]
     public GameObject mainModel;
-    public float hitFreezeDuration = 0.05f;
+
+    [Header("Stun Settings")]
+    public float stunDuration = 1.2f;
+    private bool isStunned = false;
 
     [System.Serializable]
     public class DirectionalAttack
@@ -64,9 +67,12 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
-        HandleAttacks();
-        HandleExtraJumpForce();
+        if (!isStunned)
+        {
+            HandleMovement();
+            HandleAttacks();
+            HandleExtraJumpForce();
+        }
     }
 
     void HandleMovement()
@@ -98,10 +104,12 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     void HandleAttacks()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame && !isAttacking)
+        if (isAttacking) return;
+
+        if (Mouse.current.leftButton.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack1));
 
-        if (Mouse.current.rightButton.wasPressedThisFrame && !isAttacking)
+        if (Mouse.current.rightButton.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
 
@@ -178,29 +186,26 @@ public class FighterMovementPlayer2 : MonoBehaviour
         foreach (var colA in allHitboxes)
         {
             if (colA == null) continue;
+
             foreach (var playerCol in playerColliders)
                 if (playerCol != null && colA != playerCol)
                     Physics2D.IgnoreCollision(colA, playerCol, true);
-
-            foreach (var colB in allHitboxes)
-                if (colB != null && colA != colB)
-                    Physics2D.IgnoreCollision(colA, colB, true);
         }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!isAttacking || alreadyHit.Contains(collision) || currentAttack == null) return;
+        if (!isAttacking || alreadyHit.Contains(collision) || currentAttack == null)
+            return;
 
         if (collision.CompareTag("Player1") && gameObject.CompareTag("Player2"))
         {
             alreadyHit.Add(collision);
 
-            // Damage
             Health targetHealth = collision.GetComponent<Health>();
-            if (targetHealth != null) targetHealth.TakeDamage(currentAttack.damage);
+            if (targetHealth != null)
+                targetHealth.TakeDamage(currentAttack.damage);
 
-            // Knockback
             Rigidbody2D enemyRb = collision.attachedRigidbody;
             if (enemyRb != null)
             {
@@ -208,15 +213,32 @@ public class FighterMovementPlayer2 : MonoBehaviour
                 enemyRb.AddForce(knockDir * currentAttack.knockbackForce, ForceMode2D.Impulse);
             }
 
-            StartCoroutine(HitFreeze(hitFreezeDuration));
+            FighterMovementPlayer1 p1 = collision.GetComponent<FighterMovementPlayer1>();
+            if (p1 != null)
+                p1.ApplyStun(stunDuration);
         }
     }
 
-    private IEnumerator HitFreeze(float duration)
+    // -------------------------
+    //      STUN FUNCTIE
+    // -------------------------
+    public void ApplyStun(float duration)
     {
-        Time.timeScale = 0f;
-        yield return new WaitForSecondsRealtime(duration);
-        Time.timeScale = 1f;
+        if (gameObject.CompareTag("Player2"))
+            StartCoroutine(StunRoutine(duration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+        isAttacking = false;
+        HideAllAttackObjects();
+        Debug.Log("Player 2 is stunned!");
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
+        Debug.Log("Player 2 is no longer stunned");
     }
 
     void OnDrawGizmosSelected()
