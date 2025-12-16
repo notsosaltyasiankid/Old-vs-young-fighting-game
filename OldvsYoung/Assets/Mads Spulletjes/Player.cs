@@ -54,23 +54,39 @@ public class FighterMovementPlayer1 : MonoBehaviour
     private Collider2D[] playerColliders;
     private DirectionalAttack currentAttack;
 
+    // Renderer handling
+    private SpriteRenderer[] modelRenderers;
+
+    // Input disabled for reset
+    private bool inputDisabled = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         playerColliders = GetComponentsInChildren<Collider2D>(true);
-        HideAllAttackObjects();
+
         if (mainModel != null)
-            mainModel.SetActive(true);
+            modelRenderers = mainModel.GetComponentsInChildren<SpriteRenderer>(true);
+
+        HideAllAttackObjects();
+        SetModelVisible(true);
         IgnoreInternalCollisions();
     }
 
     void Update()
     {
-        if (isStunned) return; // ❌ BLOCK ALL INPUT
+        if (isStunned || inputDisabled) return;
 
         HandleMovement();
         HandleAttacks();
         HandleExtraJumpForce();
+    }
+
+    // Visibility helper
+    void SetModelVisible(bool visible)
+    {
+        if (modelRenderers == null) return;
+        foreach (var r in modelRenderers) r.enabled = visible;
     }
 
     void HandleMovement()
@@ -102,12 +118,10 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     void HandleAttacks()
     {
-        if (isStunned) return; // ❌ cannot attack while stunned
         if (isAttacking) return;
 
         if (Keyboard.current.cKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack1));
-
         if (Keyboard.current.vKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
@@ -117,17 +131,12 @@ public class FighterMovementPlayer1 : MonoBehaviour
         isAttacking = true;
         alreadyHit.Clear();
         HideAllAttackObjects();
-        if (mainModel != null)
-            mainModel.SetActive(false);
+        SetModelVisible(false);
 
         DirectionalAttack chosenAttack = attack.rightAttack;
-        bool left = Keyboard.current.aKey.isPressed;
-        bool right = Keyboard.current.dKey.isPressed;
-        bool up = Keyboard.current.wKey.isPressed;
-
-        if (left) chosenAttack = attack.leftAttack;
-        else if (right) chosenAttack = attack.rightAttack;
-        else if (up) chosenAttack = attack.upAttack;
+        if (Keyboard.current.aKey.isPressed) chosenAttack = attack.leftAttack;
+        else if (Keyboard.current.dKey.isPressed) chosenAttack = attack.rightAttack;
+        else if (Keyboard.current.wKey.isPressed) chosenAttack = attack.upAttack;
 
         currentAttack = chosenAttack;
 
@@ -139,16 +148,65 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
         yield return new WaitForSeconds(chosenAttack.attackDuration);
 
-        foreach (BoxCollider2D box in chosenAttack.hitboxes)
-            if (box != null) box.enabled = false;
-
         HideAllAttackObjects();
-        if (mainModel != null)
-            mainModel.SetActive(true);
+        SetModelVisible(true);
 
         yield return new WaitForSeconds(chosenAttack.attackSpeed);
         isAttacking = false;
         currentAttack = null;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!isAttacking || alreadyHit.Contains(collision) || currentAttack == null)
+            return;
+
+        if (collision.CompareTag("Player2"))
+        {
+            alreadyHit.Add(collision);
+
+            Health targetHealth = collision.GetComponent<Health>();
+            if (targetHealth != null)
+                targetHealth.TakeDamage(currentAttack.damage);
+
+            Rigidbody2D enemyRb = collision.attachedRigidbody;
+            if (enemyRb != null)
+                enemyRb.AddForce(currentAttack.knockbackDirection.normalized * currentAttack.knockbackForce, ForceMode2D.Impulse);
+
+            FighterMovementPlayer2 p2 = collision.GetComponent<FighterMovementPlayer2>();
+            if (p2 != null) p2.ApplyStun(stunDuration);
+        }
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (gameObject.activeInHierarchy)
+            StartCoroutine(StunRoutine(duration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {
+        isStunned = true;
+        isAttacking = false;
+
+        HideAllAttackObjects();
+        SetModelVisible(true);
+
+        yield return new WaitForSeconds(duration);
+        isStunned = false;
+    }
+
+    public void ResetFighterState()
+    {
+        isStunned = false;
+        isAttacking = false;
+        HideAllAttackObjects();
+        SetModelVisible(true);
+    }
+
+    public void DisableFighterInput(bool disable)
+    {
+        inputDisabled = disable;
     }
 
     private void HideAllAttackObjects()
@@ -185,6 +243,7 @@ public class FighterMovementPlayer1 : MonoBehaviour
         foreach (var colA in allHitboxes)
         {
             if (colA == null) continue;
+
             foreach (var playerCol in playerColliders)
                 if (playerCol != null && colA != playerCol)
                     Physics2D.IgnoreCollision(colA, playerCol, true);
@@ -193,48 +252,5 @@ public class FighterMovementPlayer1 : MonoBehaviour
                 if (colB != null && colA != colB)
                     Physics2D.IgnoreCollision(colA, colB, true);
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (!isAttacking || alreadyHit.Contains(collision) || currentAttack == null) return;
-
-        if (collision.CompareTag("Player2") && gameObject.CompareTag("Player1"))
-        {
-            alreadyHit.Add(collision);
-
-            // Damage
-            Health targetHealth = collision.GetComponent<Health>();
-            if (targetHealth != null) targetHealth.TakeDamage(currentAttack.damage);
-
-            // Knockback
-            Rigidbody2D enemyRb = collision.attachedRigidbody;
-            if (enemyRb != null)
-            {
-                Vector2 knockDir = currentAttack.knockbackDirection.normalized;
-                enemyRb.AddForce(knockDir * currentAttack.knockbackForce, ForceMode2D.Impulse);
-            }
-
-            // APPLY STUN TO PLAYER 2
-            FighterMovementPlayer2 p2 = collision.GetComponent<FighterMovementPlayer2>();
-            if (p2 != null)
-                p2.ApplyStun(stunDuration);
-        }
-    }
-
-    // STUN FUNCTION
-    public void ApplyStun(float duration)
-    {
-        if (gameObject.activeInHierarchy)
-            StartCoroutine(StunRoutine(duration));
-    }
-
-    private IEnumerator StunRoutine(float duration)
-    {
-        isStunned = true;
-        isAttacking = false;
-        HideAllAttackObjects();
-        yield return new WaitForSeconds(duration);
-        isStunned = false;
     }
 }
