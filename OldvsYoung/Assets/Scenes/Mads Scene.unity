@@ -645,8 +645,8 @@ Transform:
   m_GameObject: {fileID: 94400790}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.34415007, y: 23.83854, z: 0}
-  m_LocalScale: {x: 36.905895, y: 20, z: 1}
+  m_LocalPosition: {x: 0.0341, y: 23.83854, z: 0}
+  m_LocalScale: {x: 36.285114, y: 20, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1019614773}
@@ -1564,8 +1564,8 @@ Transform:
   m_GameObject: {fileID: 383055211}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -20.49585, y: 20.04854, z: 0}
-  m_LocalScale: {x: 35, y: 4.6134, z: 1}
+  m_LocalPosition: {x: -20.3925, y: 20.04854, z: 0}
+  m_LocalScale: {x: 35, y: 4.8200803, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1019614773}
@@ -1685,8 +1685,8 @@ Transform:
   m_GameObject: {fileID: 509257083}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 3.1725, y: -0.84237003, z: 0}
-  m_LocalScale: {x: 2.3817341, y: 2.522368, z: 1}
+  m_LocalPosition: {x: 3.0175, y: -0.84237003, z: 0}
+  m_LocalScale: {x: 2.3616495, y: 2.522368, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1129156455}
@@ -1903,9 +1903,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5f62113477ec6648bad4e56ce4d385c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FighterMovementSmoothP2
-  moveSpeed: 10
+  moveSpeed: 12
   jumpForce: 25
-  fastFallMultiplier: 20
+  fastFallMultiplier: 25
   extraJumpForce: 50
   groundLayer:
     serializedVersion: 2
@@ -1913,7 +1913,7 @@ MonoBehaviour:
   groundCheck: {fileID: 459671552}
   groundCheckRadius: 0.1
   mainModel: {fileID: 1071653921}
-  stunDuration: 0.35
+  stunDuration: 0.55
   attack1:
     name: New Attack
     rightAttack:
@@ -1939,7 +1939,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1624245130}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 35
+      knockbackForce: 45
       damage: 15
       attackSpeed: 0.3
       attackDuration: 0.3
@@ -1968,7 +1968,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1256530155}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 40
+      knockbackForce: 50
       damage: 20
       attackSpeed: 0.45
       attackDuration: 0.35
@@ -2338,7 +2338,7 @@ MonoBehaviour:
   healthFillP2: {fileID: 1216986662}
   scoreTextP1: {fileID: 325717203}
   scoreTextP2: {fileID: 1112890957}
-  resetDelay: 2.5
+  resetDelay: 1
 --- !u!4 &743477688
 Transform:
   m_ObjectHideFlags: 0
@@ -2653,8 +2653,8 @@ Transform:
   m_GameObject: {fileID: 862218319}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 20.137949, y: 22.68854, z: 0}
-  m_LocalScale: {x: 35, y: 4.86695, z: 1}
+  m_LocalPosition: {x: 20.3446, y: 22.68854, z: 0}
+  m_LocalScale: {x: 35, y: 4.4535694, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1019614773}
@@ -2883,6 +2883,7 @@ Transform:
   - {fileID: 383055214}
   - {fileID: 2028738222}
   - {fileID: 94400792}
+  - {fileID: 1129156455}
   m_Father: {fileID: 1537750285}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1057773646
@@ -3246,7 +3247,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 509257085}
-  m_Father: {fileID: 1537750285}
+  m_Father: {fileID: 1019614773}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1216986661
 GameObject:
@@ -3691,9 +3692,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6783fc1288671b4994688f106e76574, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Simple2DMovement
-  moveSpeed: 15
+  moveSpeed: 16
   jumpForce: 30
-  fastFallMultiplier: 25
+  fastFallMultiplier: 30
   extraJumpForce: 50
   groundLayer:
     serializedVersion: 2
@@ -3704,7 +3705,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   mainModel: {fileID: 1400916080}
-  stunDuration: 0.25
+  stunDuration: 0.3
   attack1:
     name: Light Attack
     rightAttack:
@@ -3730,7 +3731,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 1935869027}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 30
+      knockbackForce: 40
       damage: 10
       attackSpeed: 0.15
       attackDuration: 0.15
@@ -3759,7 +3760,7 @@ MonoBehaviour:
       hitboxes:
       - {fileID: 808790007}
       knockbackDirection: {x: 0, y: 10}
-      knockbackForce: 35
+      knockbackForce: 45
       damage: 15
       attackSpeed: 0.35
       attackDuration: 0.25
@@ -4039,9 +4040,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1129156455}
-  - {fileID: 1019614773}
   - {fileID: 743477688}
+  - {fileID: 1019614773}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1624245128
