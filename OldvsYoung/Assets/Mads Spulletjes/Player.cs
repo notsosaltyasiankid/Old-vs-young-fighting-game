@@ -16,12 +16,15 @@ public class FighterMovementPlayer1 : MonoBehaviour
     public float groundCheckRadius = 0.2f;
 
     [Header("Attack Settings")]
-    public LayerMask enemyLayers;
     public GameObject mainModel;
 
     [Header("Stun Settings")]
     public float stunDuration = 1f;
     private bool isStunned = false;
+
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip hitSound;
 
     [System.Serializable]
     public class DirectionalAttack
@@ -54,11 +57,21 @@ public class FighterMovementPlayer1 : MonoBehaviour
     private Collider2D[] playerColliders;
     private DirectionalAttack currentAttack;
 
-    // Renderer handling
     private SpriteRenderer[] modelRenderers;
-
-    // Input disabled for reset
     private bool inputDisabled = false;
+
+    private enum AttackDirection
+    {
+        Right,
+        Left,
+        Up
+    }
+
+    private AttackDirection lastAttackDirection = AttackDirection.Right;
+
+    private int jumpCount = 0;
+    public int maxJumps = 2;
+
 
     void Start()
     {
@@ -75,23 +88,39 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     void Update()
     {
-        if (isStunned || inputDisabled) return;
+        // ❗ Alleen input blokkeren, physics blijft werken
+        if (isStunned || inputDisabled)
+            return;
 
         HandleMovement();
         HandleAttacks();
         HandleExtraJumpForce();
     }
 
-    // Visibility helper
+    // ================= VISUAL =================
+
     void SetModelVisible(bool visible)
     {
         if (modelRenderers == null) return;
-        foreach (var r in modelRenderers) r.enabled = visible;
+        foreach (var r in modelRenderers)
+            r.enabled = visible;
     }
+
+    // ================= MOVEMENT =================
 
     void HandleMovement()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
+
+        if (isGrounded)
+        {
+            jumpCount = 0;
+        }
+
 
         bool left = Keyboard.current.aKey.isPressed;
         bool right = Keyboard.current.dKey.isPressed;
@@ -101,13 +130,23 @@ public class FighterMovementPlayer1 : MonoBehaviour
         else if (right && !left) moveInput = 1f;
 
         float targetSpeed = moveInput * moveSpeed;
-        rb.linearVelocity = new Vector2(Mathf.Lerp(rb.linearVelocity.x, targetSpeed, Time.deltaTime * 15f), rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(
+            Mathf.Lerp(rb.linearVelocity.x, targetSpeed, Time.deltaTime * 15f),
+            rb.linearVelocity.y
+        );
 
-        if (Keyboard.current.wKey.wasPressedThisFrame && isGrounded)
+        if (Keyboard.current.wKey.wasPressedThisFrame && jumpCount < maxJumps)
+        {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            jumpCount++;
+        }
+
 
         if (Keyboard.current.sKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
-            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fastFallMultiplier - 1) * Time.deltaTime;
+            rb.linearVelocity += Vector2.up *
+                Physics2D.gravity.y *
+                (fastFallMultiplier - 1) *
+                Time.deltaTime;
     }
 
     void HandleExtraJumpForce()
@@ -116,12 +155,15 @@ public class FighterMovementPlayer1 : MonoBehaviour
             rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
     }
 
+    // ================= ATTACK =================
+
     void HandleAttacks()
     {
         if (isAttacking) return;
 
         if (Keyboard.current.cKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack1));
+
         if (Keyboard.current.vKey.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
@@ -130,13 +172,43 @@ public class FighterMovementPlayer1 : MonoBehaviour
     {
         isAttacking = true;
         alreadyHit.Clear();
+
         HideAllAttackObjects();
         SetModelVisible(false);
 
-        DirectionalAttack chosenAttack = attack.rightAttack;
-        if (Keyboard.current.aKey.isPressed) chosenAttack = attack.leftAttack;
-        else if (Keyboard.current.dKey.isPressed) chosenAttack = attack.rightAttack;
-        else if (Keyboard.current.wKey.isPressed) chosenAttack = attack.upAttack;
+        DirectionalAttack chosenAttack = null;
+
+        // Detect new direction input
+        if (Keyboard.current.aKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Left;
+        }
+        else if (Keyboard.current.dKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Right;
+        }
+        else if (Keyboard.current.wKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Up;
+        }
+
+        // Use last stored direction
+        switch (lastAttackDirection)
+        {
+            case AttackDirection.Left:
+                chosenAttack = attack.leftAttack;
+                break;
+
+            case AttackDirection.Right:
+                chosenAttack = attack.rightAttack;
+                break;
+
+            case AttackDirection.Up:
+                chosenAttack = attack.upAttack;
+                break;
+        }
+
+
 
         currentAttack = chosenAttack;
 
@@ -152,9 +224,12 @@ public class FighterMovementPlayer1 : MonoBehaviour
         SetModelVisible(true);
 
         yield return new WaitForSeconds(chosenAttack.attackSpeed);
+
         isAttacking = false;
         currentAttack = null;
     }
+
+    // ================= HIT =================
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -171,12 +246,23 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
             Rigidbody2D enemyRb = collision.attachedRigidbody;
             if (enemyRb != null)
-                enemyRb.AddForce(currentAttack.knockbackDirection.normalized * currentAttack.knockbackForce, ForceMode2D.Impulse);
+                enemyRb.AddForce(
+                    currentAttack.knockbackDirection.normalized *
+                    currentAttack.knockbackForce,
+                    ForceMode2D.Impulse
+                );
 
             FighterMovementPlayer2 p2 = collision.GetComponent<FighterMovementPlayer2>();
-            if (p2 != null) p2.ApplyStun(stunDuration);
+            if (p2 != null)
+                p2.ApplyStun(stunDuration);
+
+            // 🔊 Hit sound alleen bij raak
+            if (audioSource != null && hitSound != null)
+                audioSource.PlayOneShot(hitSound);
         }
     }
+
+    // ================= STUN =================
 
     public void ApplyStun(float duration)
     {
@@ -192,9 +278,13 @@ public class FighterMovementPlayer1 : MonoBehaviour
         HideAllAttackObjects();
         SetModelVisible(true);
 
+        // ❗ GEEN velocity reset → knockback blijft
         yield return new WaitForSeconds(duration);
+
         isStunned = false;
     }
+
+    // ================= UTILITY =================
 
     public void ResetFighterState()
     {
@@ -217,13 +307,23 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     private void HideAttackGroup(Attack attack)
     {
-        if (attack.leftAttack.attackObject != null) attack.leftAttack.attackObject.SetActive(false);
-        if (attack.rightAttack.attackObject != null) attack.rightAttack.attackObject.SetActive(false);
-        if (attack.upAttack.attackObject != null) attack.upAttack.attackObject.SetActive(false);
+        if (attack.leftAttack.attackObject != null)
+            attack.leftAttack.attackObject.SetActive(false);
 
-        foreach (var box in attack.leftAttack.hitboxes) if (box != null) box.enabled = false;
-        foreach (var box in attack.rightAttack.hitboxes) if (box != null) box.enabled = false;
-        foreach (var box in attack.upAttack.hitboxes) if (box != null) box.enabled = false;
+        if (attack.rightAttack.attackObject != null)
+            attack.rightAttack.attackObject.SetActive(false);
+
+        if (attack.upAttack.attackObject != null)
+            attack.upAttack.attackObject.SetActive(false);
+
+        foreach (var box in attack.leftAttack.hitboxes)
+            if (box != null) box.enabled = false;
+
+        foreach (var box in attack.rightAttack.hitboxes)
+            if (box != null) box.enabled = false;
+
+        foreach (var box in attack.upAttack.hitboxes)
+            if (box != null) box.enabled = false;
     }
 
     private void IgnoreInternalCollisions()
@@ -232,9 +332,14 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
         void Collect(Attack atk)
         {
-            if (atk.rightAttack.hitboxes != null) allHitboxes.AddRange(atk.rightAttack.hitboxes);
-            if (atk.leftAttack.hitboxes != null) allHitboxes.AddRange(atk.leftAttack.hitboxes);
-            if (atk.upAttack.hitboxes != null) allHitboxes.AddRange(atk.upAttack.hitboxes);
+            if (atk.rightAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.rightAttack.hitboxes);
+
+            if (atk.leftAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.leftAttack.hitboxes);
+
+            if (atk.upAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.upAttack.hitboxes);
         }
 
         Collect(attack1);

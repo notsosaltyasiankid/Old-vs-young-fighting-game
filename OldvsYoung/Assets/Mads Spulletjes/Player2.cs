@@ -22,6 +22,10 @@ public class FighterMovementPlayer2 : MonoBehaviour
     public float stunDuration = 1.2f;
     private bool isStunned = false;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip hitSound;
+
     private SpriteRenderer[] modelRenderers;
 
     [System.Serializable]
@@ -55,8 +59,21 @@ public class FighterMovementPlayer2 : MonoBehaviour
     private Collider2D[] playerColliders;
     private DirectionalAttack currentAttack;
 
-    // Input disabled for reset
     private bool inputDisabled = false;
+
+    private enum AttackDirection
+    {
+        Right,
+        Left,
+        Up
+    }
+
+    private AttackDirection lastAttackDirection = AttackDirection.Right;
+
+    private int jumpCount = 0;
+    public int maxJumps = 2;
+
+
 
     void Start()
     {
@@ -73,23 +90,38 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     void Update()
     {
-        if (isStunned || inputDisabled) return;
+        if (isStunned || inputDisabled)
+            return;
 
         HandleMovement();
         HandleAttacks();
         HandleExtraJumpForce();
     }
 
-    // Visibility helper
+    // ================= VISUAL =================
+
     void SetModelVisible(bool visible)
     {
         if (modelRenderers == null) return;
-        foreach (var r in modelRenderers) r.enabled = visible;
+        foreach (var r in modelRenderers)
+            r.enabled = visible;
     }
+
+    // ================= MOVEMENT =================
 
     void HandleMovement()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = Physics2D.OverlapCircle(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
+
+        if (isGrounded)
+        {
+            jumpCount = 0;
+        }
+
 
         bool left = Keyboard.current.leftArrowKey.isPressed;
         bool right = Keyboard.current.rightArrowKey.isPressed;
@@ -99,13 +131,23 @@ public class FighterMovementPlayer2 : MonoBehaviour
         else if (right && !left) moveInput = 1f;
 
         float targetSpeed = moveInput * moveSpeed;
-        rb.linearVelocity = new Vector2(Mathf.Lerp(rb.linearVelocity.x, targetSpeed, Time.deltaTime * 15f), rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(
+            Mathf.Lerp(rb.linearVelocity.x, targetSpeed, Time.deltaTime * 15f),
+            rb.linearVelocity.y
+        );
 
-        if (Keyboard.current.upArrowKey.wasPressedThisFrame && isGrounded)
+        if (Keyboard.current.upArrowKey.wasPressedThisFrame && jumpCount < maxJumps)
+        {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            jumpCount++;
+        }
+
 
         if (Keyboard.current.downArrowKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
-            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fastFallMultiplier - 1) * Time.deltaTime;
+            rb.linearVelocity += Vector2.up *
+                Physics2D.gravity.y *
+                (fastFallMultiplier - 1) *
+                Time.deltaTime;
     }
 
     void HandleExtraJumpForce()
@@ -114,12 +156,15 @@ public class FighterMovementPlayer2 : MonoBehaviour
             rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
     }
 
+    // ================= ATTACK =================
+
     void HandleAttacks()
     {
         if (isAttacking) return;
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack1));
+
         if (Mouse.current.rightButton.wasPressedThisFrame)
             StartCoroutine(PerformDirectionalAttack(attack2));
     }
@@ -132,10 +177,38 @@ public class FighterMovementPlayer2 : MonoBehaviour
         HideAllAttackObjects();
         SetModelVisible(false);
 
-        DirectionalAttack chosenAttack = attack.rightAttack;
-        if (Keyboard.current.leftArrowKey.isPressed) chosenAttack = attack.leftAttack;
-        else if (Keyboard.current.rightArrowKey.isPressed) chosenAttack = attack.rightAttack;
-        else if (Keyboard.current.upArrowKey.isPressed) chosenAttack = attack.upAttack;
+        DirectionalAttack chosenAttack = null;
+
+        // Detect new direction input
+        if (Keyboard.current.leftArrowKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Left;
+        }
+        else if (Keyboard.current.rightArrowKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Right;
+        }
+        else if (Keyboard.current.upArrowKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Up;
+        }
+
+        // Use last stored direction
+        switch (lastAttackDirection)
+        {
+            case AttackDirection.Left:
+                chosenAttack = attack.leftAttack;
+                break;
+
+            case AttackDirection.Right:
+                chosenAttack = attack.rightAttack;
+                break;
+
+            case AttackDirection.Up:
+                chosenAttack = attack.upAttack;
+                break;
+        }
+
 
         currentAttack = chosenAttack;
 
@@ -151,9 +224,12 @@ public class FighterMovementPlayer2 : MonoBehaviour
         SetModelVisible(true);
 
         yield return new WaitForSeconds(chosenAttack.attackSpeed);
+
         isAttacking = false;
         currentAttack = null;
     }
+
+    // ================= HIT DETECTION =================
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -170,13 +246,23 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
             Rigidbody2D enemyRb = collision.attachedRigidbody;
             if (enemyRb != null)
-                enemyRb.AddForce(currentAttack.knockbackDirection.normalized * currentAttack.knockbackForce, ForceMode2D.Impulse);
+                enemyRb.AddForce(
+                    currentAttack.knockbackDirection.normalized *
+                    currentAttack.knockbackForce,
+                    ForceMode2D.Impulse
+                );
 
             FighterMovementPlayer1 p1 = collision.GetComponent<FighterMovementPlayer1>();
             if (p1 != null)
                 p1.ApplyStun(stunDuration);
+
+            // 🔊 HIT SOUND (alleen bij raak)
+            if (audioSource != null && hitSound != null)
+                audioSource.PlayOneShot(hitSound);
         }
     }
+
+    // ================= STUN =================
 
     public void ApplyStun(float duration)
     {
@@ -193,8 +279,11 @@ public class FighterMovementPlayer2 : MonoBehaviour
         SetModelVisible(true);
 
         yield return new WaitForSeconds(duration);
+
         isStunned = false;
     }
+
+    // ================= UTILITY =================
 
     public void ResetFighterState()
     {
@@ -217,13 +306,23 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     private void HideAttackGroup(Attack attack)
     {
-        if (attack.leftAttack.attackObject != null) attack.leftAttack.attackObject.SetActive(false);
-        if (attack.rightAttack.attackObject != null) attack.rightAttack.attackObject.SetActive(false);
-        if (attack.upAttack.attackObject != null) attack.upAttack.attackObject.SetActive(false);
+        if (attack.leftAttack.attackObject != null)
+            attack.leftAttack.attackObject.SetActive(false);
 
-        foreach (var box in attack.leftAttack.hitboxes) if (box != null) box.enabled = false;
-        foreach (var box in attack.rightAttack.hitboxes) if (box != null) box.enabled = false;
-        foreach (var box in attack.upAttack.hitboxes) if (box != null) box.enabled = false;
+        if (attack.rightAttack.attackObject != null)
+            attack.rightAttack.attackObject.SetActive(false);
+
+        if (attack.upAttack.attackObject != null)
+            attack.upAttack.attackObject.SetActive(false);
+
+        foreach (var box in attack.leftAttack.hitboxes)
+            if (box != null) box.enabled = false;
+
+        foreach (var box in attack.rightAttack.hitboxes)
+            if (box != null) box.enabled = false;
+
+        foreach (var box in attack.upAttack.hitboxes)
+            if (box != null) box.enabled = false;
     }
 
     private void IgnoreInternalCollisions()
@@ -232,9 +331,14 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
         void Collect(Attack atk)
         {
-            if (atk.rightAttack.hitboxes != null) allHitboxes.AddRange(atk.rightAttack.hitboxes);
-            if (atk.leftAttack.hitboxes != null) allHitboxes.AddRange(atk.leftAttack.hitboxes);
-            if (atk.upAttack.hitboxes != null) allHitboxes.AddRange(atk.upAttack.hitboxes);
+            if (atk.rightAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.rightAttack.hitboxes);
+
+            if (atk.leftAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.leftAttack.hitboxes);
+
+            if (atk.upAttack.hitboxes != null)
+                allHitboxes.AddRange(atk.upAttack.hitboxes);
         }
 
         Collect(attack1);
