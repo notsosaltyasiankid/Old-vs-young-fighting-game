@@ -8,7 +8,9 @@ public class Health : MonoBehaviour
     public float currentHealth;
 
     [Header("UI Healthbar")]
-    public Image foregroundBar;   // De gevulde balk (foreground)
+    public Image foregroundBar;
+
+    [HideInInspector] public bool isDead = false;
 
     void Awake()
     {
@@ -18,10 +20,10 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-        Debug.Log($"{gameObject.name} took {damage} damage! Current Health: {currentHealth}");
 
         UpdateHealthUI();
 
@@ -35,14 +37,19 @@ public class Health : MonoBehaviour
     {
         if (foregroundBar != null)
         {
-            float fill = currentHealth / maxHealth;
-            foregroundBar.fillAmount = fill;
+            foregroundBar.fillAmount = currentHealth / maxHealth;
         }
     }
 
     private void Die()
     {
-        Debug.Log($"{gameObject.name} has died!");
-        gameObject.SetActive(false);
+        if (isDead) return;
+        isDead = true;
+
+        ResetManager resetManager = FindObjectOfType<ResetManager>();
+        if (resetManager != null)
+        {
+            resetManager.PlayerKilled(gameObject);
+        }
     }
 }

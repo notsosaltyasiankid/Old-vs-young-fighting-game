@@ -12,6 +12,13 @@ public class ActionCamera : MonoBehaviour
 
     private Camera cam;
 
+    [Header("Camera Bounds")]
+    public float minX;
+    public float maxX;
+    public float minY;
+    public float maxY;
+
+
     void Start()
     {
         cam = GetComponent<Camera>();
@@ -28,12 +35,24 @@ public class ActionCamera : MonoBehaviour
     void MoveCamera()
     {
         Vector3 center = GetCenterPoint();
+
+        Vector3 targetPos = new Vector3(
+            center.x,
+            center.y,
+            transform.position.z
+        );
+
+        // Clamp camera inside boundaries
+        targetPos.x = Mathf.Clamp(targetPos.x, minX, maxX);
+        targetPos.y = Mathf.Clamp(targetPos.y, minY, maxY);
+
         transform.position = Vector3.Lerp(
             transform.position,
-            new Vector3(center.x, center.y, transform.position.z),
+            targetPos,
             Time.deltaTime * smoothSpeed
         );
     }
+
 
     void ZoomCamera()
     {

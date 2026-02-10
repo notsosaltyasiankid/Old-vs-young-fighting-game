@@ -22,6 +22,11 @@ public class FighterMovementPlayer1 : MonoBehaviour
     public float stunDuration = 1f;
     private bool isStunned = false;
 
+    [Header("Jump Settings")]
+    public int maxExtraAirJumps = 1; // normal double jump
+    private int currentExtraAirJumps = 0;
+
+
     [Header("Audio")]
     public AudioSource audioSource;
     public AudioClip hitSound;
@@ -60,6 +65,8 @@ public class FighterMovementPlayer1 : MonoBehaviour
     private SpriteRenderer[] modelRenderers;
     private bool inputDisabled = false;
 
+
+
     private enum AttackDirection
     {
         Right,
@@ -85,6 +92,8 @@ public class FighterMovementPlayer1 : MonoBehaviour
         SetModelVisible(true);
         IgnoreInternalCollisions();
     }
+
+
 
     void Update()
     {
@@ -135,11 +144,19 @@ public class FighterMovementPlayer1 : MonoBehaviour
             rb.linearVelocity.y
         );
 
-        if (Keyboard.current.wKey.wasPressedThisFrame && jumpCount < maxJumps)
+        if (Keyboard.current.wKey.wasPressedThisFrame)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            jumpCount++;
+            if (isGrounded)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            }
+            else if (currentExtraAirJumps < maxExtraAirJumps)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+                currentExtraAirJumps++;
+            }
         }
+
 
 
         if (Keyboard.current.sKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
@@ -153,6 +170,18 @@ public class FighterMovementPlayer1 : MonoBehaviour
     {
         if (Keyboard.current.wKey.isPressed && !isGrounded && rb.linearVelocity.y > 0)
             rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
+
+        isGrounded = Physics2D.OverlapCircle(
+        groundCheck.position,
+        groundCheckRadius,
+        groundLayer
+);
+
+        if (isGrounded)
+        {
+            currentExtraAirJumps = 0; // reset extra jumps when touching ground
+        }
+
     }
 
     // ================= ATTACK =================

@@ -9,10 +9,6 @@ public class ResetManager : MonoBehaviour
     public GameObject player1;
     public GameObject player2;
 
-    [Header("Health")]
-    private Health hp1;
-    private Health hp2;
-
     [Header("Health Bar Foregrounds")]
     public UnityEngine.UI.Image healthFillP1;
     public UnityEngine.UI.Image healthFillP2;
@@ -22,13 +18,16 @@ public class ResetManager : MonoBehaviour
     public TMP_Text scoreTextP2;
 
     [Header("Round Settings")]
-    public float resetDelay = 3f; // ⏱️ seconden voor auto reset
+    public float resetDelay = 3f;
 
-    private int scoreP1 = 0;
-    private int scoreP2 = 0;
+    private Health hp1;
+    private Health hp2;
 
     private Vector3 startPosP1;
     private Vector3 startPosP2;
+
+    private int scoreP1 = 0;
+    private int scoreP2 = 0;
 
     private bool roundEnded = false;
 
@@ -45,7 +44,7 @@ public class ResetManager : MonoBehaviour
 
     void Update()
     {
-        // 🔴 Handmatige reset + score reset
+        // Manual reset
         if (Keyboard.current.rKey.wasPressedThisFrame)
         {
             scoreP1 = 0;
@@ -53,30 +52,29 @@ public class ResetManager : MonoBehaviour
             UpdateScoreUI();
             StartCoroutine(RoundEndRoutine());
         }
+    }
 
-        // 🟢 Check deaths
-        if (!roundEnded)
-        {
-            if (hp1.currentHealth <= 0)
-            {
-                scoreP2++;
-                UpdateScoreUI();
-                StartCoroutine(RoundEndRoutine());
-            }
-            else if (hp2.currentHealth <= 0)
-            {
-                scoreP1++;
-                UpdateScoreUI();
-                StartCoroutine(RoundEndRoutine());
-            }
-        }
+    /// <summary>
+    /// Called by Health.Die() or VoidDeath
+    /// </summary>
+    public void PlayerKilled(GameObject player)
+    {
+        if (roundEnded) return; // prevent double counting
+
+        if (player.CompareTag("Player1"))
+            scoreP2++;
+        else if (player.CompareTag("Player2"))
+            scoreP1++;
+
+        UpdateScoreUI();
+        StartCoroutine(RoundEndRoutine());
     }
 
     private IEnumerator RoundEndRoutine()
     {
         roundEnded = true;
 
-        // Disable player input
+        // Disable input
         FighterMovementPlayer1 p1 = player1.GetComponent<FighterMovementPlayer1>();
         FighterMovementPlayer2 p2 = player2.GetComponent<FighterMovementPlayer2>();
 
@@ -87,7 +85,7 @@ public class ResetManager : MonoBehaviour
 
         ResetMatch();
 
-        // Re-enable player input
+        // Re-enable input
         if (p1 != null) p1.DisableFighterInput(false);
         if (p2 != null) p2.DisableFighterInput(false);
 
@@ -98,42 +96,46 @@ public class ResetManager : MonoBehaviour
     {
         Debug.Log("RESETTING MATCH");
 
-        // Health reset
+        // Reset health
         hp1.currentHealth = hp1.maxHealth;
         hp2.currentHealth = hp2.maxHealth;
 
-        // Healthbar reset
-        healthFillP1.fillAmount = 1f;
-        healthFillP2.fillAmount = 1f;
+        hp1.isDead = false; // reset death flags
+        hp2.isDead = false;
 
-        // Position reset
+        // Reset health bars
+        if (healthFillP1 != null) healthFillP1.fillAmount = 1f;
+        if (healthFillP2 != null) healthFillP2.fillAmount = 1f;
+
+        // Reset positions
         player1.transform.position = startPosP1;
         player2.transform.position = startPosP2;
 
-        // Velocity reset
+        // Reset velocity
         player1.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
         player2.GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
 
-        // Reactivate players
-        player1.SetActive(true);
-        player2.SetActive(true);
-
-        // Reset fighter internal state (important)
+        // Reset fighter internal state
         FighterMovementPlayer1 p1 = player1.GetComponent<FighterMovementPlayer1>();
         FighterMovementPlayer2 p2 = player2.GetComponent<FighterMovementPlayer2>();
 
-        if (p1 != null) p1.ResetFighterState();
-        if (p2 != null) p2.ResetFighterState();
+        if (p1 != null)
+            p1.ResetFighterState();
+
+        if (p2 != null)
+            p2.ResetFighterState();
+
+        // Ensure players are active
+        player1.SetActive(true);
+        player2.SetActive(true);
 
         Debug.Log("MATCH RESET COMPLETE");
     }
 
+
     private void UpdateScoreUI()
     {
-        if (scoreTextP1 != null)
-            scoreTextP1.text = scoreP1.ToString();
-
-        if (scoreTextP2 != null)
-            scoreTextP2.text = scoreP2.ToString();
+        if (scoreTextP1 != null) scoreTextP1.text = scoreP1.ToString();
+        if (scoreTextP2 != null) scoreTextP2.text = scoreP2.ToString();
     }
 }
