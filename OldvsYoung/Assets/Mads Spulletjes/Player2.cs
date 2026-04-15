@@ -23,8 +23,8 @@ public class FighterMovementPlayer2 : MonoBehaviour
     private bool isStunned = false;
 
     [Header("Jump Settings")]
-    public int maxExtraAirJumps = 1; // normal double jump
-    private int currentExtraAirJumps = 0;
+    [SerializeField] public int maxExtraAirJumps = 1; // normal double jump
+    [SerializeField] private int currentExtraAirJumps = 0;
 
     [Header("Audio")]
     public AudioSource audioSource;
@@ -51,6 +51,7 @@ public class FighterMovementPlayer2 : MonoBehaviour
         public DirectionalAttack rightAttack;
         public DirectionalAttack leftAttack;
         public DirectionalAttack upAttack;
+        public DirectionalAttack downAttack;
     }
 
     public Attack attack1;
@@ -65,11 +66,11 @@ public class FighterMovementPlayer2 : MonoBehaviour
 
     private bool inputDisabled = false;
 
-    private enum AttackDirection { Right, Left, Up }
+    private enum AttackDirection { Right, Left, Up, Down }
     private AttackDirection lastAttackDirection = AttackDirection.Right;
 
-    private int jumpCount = 0;
-    public int maxJumps = 2;
+    [SerializeField] private int jumpCount = 0;
+
 
     void Start()
     {
@@ -116,26 +117,26 @@ public class FighterMovementPlayer2 : MonoBehaviour
         if (Keyboard.current.leftArrowKey.isPressed) moveInput = -1f;
         if (Keyboard.current.rightArrowKey.isPressed) moveInput = 1f;
 
-        rb.velocity = new Vector2(Mathf.Lerp(rb.velocity.x, moveInput * moveSpeed, Time.deltaTime * 15f), rb.velocity.y);
+        rb.linearVelocity = new Vector2(Mathf.Lerp(rb.linearVelocity.x, moveInput * moveSpeed, Time.deltaTime * 15f), rb.linearVelocity.y);
 
         if (Keyboard.current.upArrowKey.wasPressedThisFrame)
         {
             if (isGrounded || currentExtraAirJumps < maxExtraAirJumps)
             {
-                rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
                 if (!isGrounded) currentExtraAirJumps++; // count air jumps
                 jumpCount++;
             }
         }
 
-        if (Keyboard.current.downArrowKey.isPressed && !isGrounded && rb.velocity.y < 0)
-            rb.velocity += Vector2.up * Physics2D.gravity.y * (fastFallMultiplier - 1) * Time.deltaTime;
+        if (Keyboard.current.downArrowKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fastFallMultiplier - 1) * Time.deltaTime;
     }
 
     void HandleExtraJumpForce()
     {
-        if (Keyboard.current.upArrowKey.isPressed && !isGrounded && rb.velocity.y > 0)
-            rb.velocity += Vector2.up * extraJumpForce * Time.deltaTime;
+        if (Keyboard.current.upArrowKey.isPressed && !isGrounded && rb.linearVelocity.y > 0)
+            rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
     }
 
     // ================= ATTACK =================
@@ -158,15 +159,21 @@ public class FighterMovementPlayer2 : MonoBehaviour
         SetModelVisible(false);
 
         // Detect direction
-        if (Keyboard.current.leftArrowKey.isPressed) lastAttackDirection = AttackDirection.Left;
-        else if (Keyboard.current.rightArrowKey.isPressed) lastAttackDirection = AttackDirection.Right;
-        else if (Keyboard.current.upArrowKey.isPressed) lastAttackDirection = AttackDirection.Up;
+        if (Keyboard.current.downArrowKey.isPressed)
+            lastAttackDirection = AttackDirection.Down;
+        else if (Keyboard.current.leftArrowKey.isPressed)
+            lastAttackDirection = AttackDirection.Left;
+        else if (Keyboard.current.rightArrowKey.isPressed)
+            lastAttackDirection = AttackDirection.Right;
+        else if (Keyboard.current.upArrowKey.isPressed)
+            lastAttackDirection = AttackDirection.Up;
 
         switch (lastAttackDirection)
         {
             case AttackDirection.Left: currentAttack = attack.leftAttack; break;
             case AttackDirection.Right: currentAttack = attack.rightAttack; break;
             case AttackDirection.Up: currentAttack = attack.upAttack; break;
+            case AttackDirection.Down: currentAttack = attack.downAttack; break;
         }
 
         if (currentAttack.attackObject != null)
@@ -262,10 +269,12 @@ public class FighterMovementPlayer2 : MonoBehaviour
         if (attack.leftAttack.attackObject != null) attack.leftAttack.attackObject.SetActive(false);
         if (attack.rightAttack.attackObject != null) attack.rightAttack.attackObject.SetActive(false);
         if (attack.upAttack.attackObject != null) attack.upAttack.attackObject.SetActive(false);
+        if (attack.downAttack.attackObject != null) attack.downAttack.attackObject.SetActive(false);
 
         foreach (var box in attack.leftAttack.hitboxes) if (box != null) box.enabled = false;
         foreach (var box in attack.rightAttack.hitboxes) if (box != null) box.enabled = false;
         foreach (var box in attack.upAttack.hitboxes) if (box != null) box.enabled = false;
+        foreach (var box in attack.downAttack.hitboxes) if (box != null) box.enabled = false;
     }
 
     private void IgnoreInternalCollisions()
@@ -277,6 +286,7 @@ public class FighterMovementPlayer2 : MonoBehaviour
             if (atk.rightAttack.hitboxes != null) allHitboxes.AddRange(atk.rightAttack.hitboxes);
             if (atk.leftAttack.hitboxes != null) allHitboxes.AddRange(atk.leftAttack.hitboxes);
             if (atk.upAttack.hitboxes != null) allHitboxes.AddRange(atk.upAttack.hitboxes);
+            if (atk.downAttack.hitboxes != null) allHitboxes.AddRange(atk.downAttack.hitboxes);
         }
 
         Collect(attack1);

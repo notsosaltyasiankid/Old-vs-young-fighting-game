@@ -23,9 +23,8 @@ public class FighterMovementPlayer1 : MonoBehaviour
     private bool isStunned = false;
 
     [Header("Jump Settings")]
-    public int maxExtraAirJumps = 1; // normal double jump
-    private int currentExtraAirJumps = 0;
-
+    [SerializeField] public int maxExtraAirJumps = 1; // normal double jump
+    [SerializeField] private int currentExtraAirJumps = 0;
 
     [Header("Audio")]
     public AudioSource audioSource;
@@ -50,6 +49,7 @@ public class FighterMovementPlayer1 : MonoBehaviour
         public DirectionalAttack rightAttack;
         public DirectionalAttack leftAttack;
         public DirectionalAttack upAttack;
+        public DirectionalAttack downAttack;
     }
 
     public Attack attack1;
@@ -65,20 +65,17 @@ public class FighterMovementPlayer1 : MonoBehaviour
     private SpriteRenderer[] modelRenderers;
     private bool inputDisabled = false;
 
-
-
     private enum AttackDirection
     {
         Right,
         Left,
-        Up
+        Up,
+        Down
     }
 
     private AttackDirection lastAttackDirection = AttackDirection.Right;
 
-    private int jumpCount = 0;
-    public int maxJumps = 2;
-
+    [SerializeField] private int jumpCount = 0;
 
     void Start()
     {
@@ -92,8 +89,6 @@ public class FighterMovementPlayer1 : MonoBehaviour
         SetModelVisible(true);
         IgnoreInternalCollisions();
     }
-
-
 
     void Update()
     {
@@ -130,7 +125,6 @@ public class FighterMovementPlayer1 : MonoBehaviour
             jumpCount = 0;
         }
 
-
         bool left = Keyboard.current.aKey.isPressed;
         bool right = Keyboard.current.dKey.isPressed;
 
@@ -157,8 +151,6 @@ public class FighterMovementPlayer1 : MonoBehaviour
             }
         }
 
-
-
         if (Keyboard.current.sKey.isPressed && !isGrounded && rb.linearVelocity.y < 0)
             rb.linearVelocity += Vector2.up *
                 Physics2D.gravity.y *
@@ -172,16 +164,15 @@ public class FighterMovementPlayer1 : MonoBehaviour
             rb.linearVelocity += Vector2.up * extraJumpForce * Time.deltaTime;
 
         isGrounded = Physics2D.OverlapCircle(
-        groundCheck.position,
-        groundCheckRadius,
-        groundLayer
-);
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer
+        );
 
         if (isGrounded)
         {
             currentExtraAirJumps = 0; // reset extra jumps when touching ground
         }
-
     }
 
     // ================= ATTACK =================
@@ -208,7 +199,11 @@ public class FighterMovementPlayer1 : MonoBehaviour
         DirectionalAttack chosenAttack = null;
 
         // Detect new direction input
-        if (Keyboard.current.aKey.isPressed)
+        if (Keyboard.current.sKey.isPressed)
+        {
+            lastAttackDirection = AttackDirection.Down;
+        }
+        else if (Keyboard.current.aKey.isPressed)
         {
             lastAttackDirection = AttackDirection.Left;
         }
@@ -235,24 +230,31 @@ public class FighterMovementPlayer1 : MonoBehaviour
             case AttackDirection.Up:
                 chosenAttack = attack.upAttack;
                 break;
+
+            case AttackDirection.Down:
+                chosenAttack = attack.downAttack;
+                break;
         }
-
-
 
         currentAttack = chosenAttack;
 
-        if (chosenAttack.attackObject != null)
+        if (chosenAttack != null && chosenAttack.attackObject != null)
             chosenAttack.attackObject.SetActive(true);
 
-        foreach (BoxCollider2D box in chosenAttack.hitboxes)
-            if (box != null) box.enabled = true;
+        if (chosenAttack != null && chosenAttack.hitboxes != null)
+        {
+            foreach (BoxCollider2D box in chosenAttack.hitboxes)
+                if (box != null) box.enabled = true;
+        }
 
-        yield return new WaitForSeconds(chosenAttack.attackDuration);
+        float dur = chosenAttack != null ? chosenAttack.attackDuration : 0.2f;
+        yield return new WaitForSeconds(dur);
 
         HideAllAttackObjects();
         SetModelVisible(true);
 
-        yield return new WaitForSeconds(chosenAttack.attackSpeed);
+        float spd = chosenAttack != null ? chosenAttack.attackSpeed : 0.4f;
+        yield return new WaitForSeconds(spd);
 
         isAttacking = false;
         currentAttack = null;
@@ -336,55 +338,67 @@ public class FighterMovementPlayer1 : MonoBehaviour
 
     private void HideAttackGroup(Attack attack)
     {
-        if (attack.leftAttack.attackObject != null)
-            attack.leftAttack.attackObject.SetActive(false);
+        if (attack == null) return;
 
-        if (attack.rightAttack.attackObject != null)
-            attack.rightAttack.attackObject.SetActive(false);
+        void Disable(DirectionalAttack dir)
+        {
+            if (dir == null) return;
 
-        if (attack.upAttack.attackObject != null)
-            attack.upAttack.attackObject.SetActive(false);
+            if (dir.attackObject != null)
+                dir.attackObject.SetActive(false);
 
-        foreach (var box in attack.leftAttack.hitboxes)
-            if (box != null) box.enabled = false;
+            if (dir.hitboxes != null)
+            {
+                foreach (var box in dir.hitboxes)
+                    if (box != null)
+                        box.enabled = false;
+            }
+        }
 
-        foreach (var box in attack.rightAttack.hitboxes)
-            if (box != null) box.enabled = false;
-
-        foreach (var box in attack.upAttack.hitboxes)
-            if (box != null) box.enabled = false;
+        Disable(attack.leftAttack);
+        Disable(attack.rightAttack);
+        Disable(attack.upAttack);
+        Disable(attack.downAttack);
     }
 
     private void IgnoreInternalCollisions()
     {
         List<Collider2D> allHitboxes = new List<Collider2D>();
 
-        void Collect(Attack atk)
+        void Collect(DirectionalAttack dir)
         {
-            if (atk.rightAttack.hitboxes != null)
-                allHitboxes.AddRange(atk.rightAttack.hitboxes);
-
-            if (atk.leftAttack.hitboxes != null)
-                allHitboxes.AddRange(atk.leftAttack.hitboxes);
-
-            if (atk.upAttack.hitboxes != null)
-                allHitboxes.AddRange(atk.upAttack.hitboxes);
+            if (dir == null || dir.hitboxes == null) return;
+            allHitboxes.AddRange(dir.hitboxes);
         }
 
-        Collect(attack1);
-        Collect(attack2);
+        void CollectAttack(Attack atk)
+        {
+            if (atk == null) return;
+
+            Collect(atk.rightAttack);
+            Collect(atk.leftAttack);
+            Collect(atk.upAttack);
+            Collect(atk.downAttack);
+        }
+
+        CollectAttack(attack1);
+        CollectAttack(attack2);
 
         foreach (var colA in allHitboxes)
         {
             if (colA == null) continue;
 
             foreach (var playerCol in playerColliders)
+            {
                 if (playerCol != null && colA != playerCol)
                     Physics2D.IgnoreCollision(colA, playerCol, true);
+            }
 
             foreach (var colB in allHitboxes)
+            {
                 if (colB != null && colA != colB)
                     Physics2D.IgnoreCollision(colA, colB, true);
+            }
         }
     }
 }
